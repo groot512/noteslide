@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NoteSlide — PDF/이미지를 편집 가능한 PowerPoint로 변환</title>
+    <meta name="description" content="NotebookLM PDF 또는 이미지 슬라이드를 편집 가능한 PowerPoint(PPTX)로 변환하세요. AI Vision으로 텍스트, 그래픽, 슬라이드 구조를 정확히 인식합니다.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <!-- 배경 그래디언트 오브 -->
+    <div class="bg-orbs">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+    </div>
+
+    <!-- 네비게이션 -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">
+                <span class="logo-icon">📊</span>
+                <span class="logo-text">NoteSlide</span>
+            </a>
+            <div class="nav-badge">AI Powered</div>
+        </div>
+    </nav>
+
+    <!-- 히어로 섹션 -->
+    <main>
+        <section class="hero" id="hero">
+            <div class="hero-content">
+                <div class="hero-badge">
+                    <span class="badge-dot"></span>
+                    AI Vision 기반 변환
+                </div>
+                <h1 class="hero-title">
+                    슬라이드를 <span class="gradient-text">편집 가능한</span><br>
+                    PowerPoint로 변환
+                </h1>
+                <p class="hero-subtitle">
+                    NotebookLM PDF 또는 이미지 슬라이드를 편집 가능한 PPTX로 변환하세요.<br>
+                    AI가 텍스트, 그래픽, 레이아웃을 정확히 인식합니다.
+                </p>
+
+                <!-- 업로드 영역 -->
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-content" id="uploadContent">
+                        <div class="upload-icon">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="17 8 12 3 7 8"/>
+                                <line x1="12" y1="3" x2="12" y2="15"/>
+                            </svg>
+                        </div>
+                        <p class="upload-text">클릭하거나 파일을 드래그하여 업로드</p>
+                        <p class="upload-hint">PDF 또는 이미지 파일 (JPG, PNG) 지원</p>
+                        <input type="file" id="fileInput" multiple accept=".pdf,.jpg,.jpeg,.png" hidden>
+                    </div>
+
+                    <!-- 파일 프리뷰 (숨김) -->
+                    <div class="file-preview" id="filePreview" style="display: none;">
+                        <div class="preview-header">
+                            <span class="preview-title">선택된 파일</span>
+                            <button class="preview-clear" id="clearFiles">초기화</button>
+                        </div>
+                        <div class="preview-list" id="previewList"></div>
+                        <button class="convert-btn" id="convertBtn">
+                            <span class="btn-icon">⚡</span>
+                            변환 시작
+                        </button>
+                    </div>
+
+                    <!-- 진행 상태 (숨김) -->
+                    <div class="progress-area" id="progressArea" style="display: none;">
+                        <div class="progress-spinner"></div>
+                        <p class="progress-text" id="progressText">변환 준비 중...</p>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" id="progressBar"></div>
+                        </div>
+                        <p class="progress-detail" id="progressDetail"></p>
+                    </div>
+
+                    <!-- 완료 상태 (숨김) -->
+                    <div class="result-area" id="resultArea" style="display: none;">
+                        <div class="result-icon">✅</div>
+                        <p class="result-text">변환이 완료되었습니다!</p>
+                        <p class="result-method" id="resultMethod"></p>
+                        <a class="download-btn" id="downloadBtn" href="#" download>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="7 10 12 15 17 10"/>
+                                <line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
+                            PPTX 다운로드
+                        </a>
+                        <button class="retry-btn" id="retryBtn">다른 파일 변환</button>
+                    </div>
+                </div>
+
+                <!-- 에러 표시 -->
+                <div class="error-toast" id="errorToast" style="display: none;">
+                    <span class="error-icon">⚠️</span>
+                    <span class="error-message" id="errorMessage"></span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 기능 소개 섹션 -->
+        <section class="features" id="features">
+            <div class="features-container">
+                <h2 class="section-title">왜 NoteSlide인가요?</h2>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon-bg">
+                            <span class="feature-icon">🎯</span>
+                        </div>
+                        <h3 class="feature-title">픽셀 퍼펙트 변환</h3>
+                        <p class="feature-desc">
+                            원본 레이아웃, 폰트, 스타일을 정확히 재현하여
+                            완전히 편집 가능한 PowerPoint 파일을 생성합니다.
+                        </p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon-bg">
+                            <span class="feature-icon">🧠</span>
+                        </div>
+                        <h3 class="feature-title">AI 기반 인식</h3>
+                        <p class="feature-desc">
+                            Gemini AI Vision을 활용하여 텍스트, 그래픽,
+                            슬라이드 구조를 지능적으로 감지합니다.
+                        </p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon-bg">
+                            <span class="feature-icon">⚡</span>
+                        </div>
+                        <h3 class="feature-title">빠르고 간편</h3>
+                        <p class="feature-desc">
+                            업로드 한 번이면 끝. 복잡한 설정 없이
+                            몇 초 안에 편집 가능한 슬라이드를 받으세요.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 작동 원리 섹션 -->
+        <section class="how-it-works" id="howItWorks">
+            <div class="hiw-container">
+                <h2 class="section-title">어떻게 작동하나요?</h2>
+                <div class="steps-grid">
+                    <div class="step-card">
+                        <div class="step-number">01</div>
+                        <h3 class="step-title">파일 업로드</h3>
+                        <p class="step-desc">PDF 또는 이미지 파일을 드래그하거나 클릭하여 업로드하세요.</p>
+                    </div>
+                    <div class="step-arrow">→</div>
+                    <div class="step-card">
+                        <div class="step-number">02</div>
+                        <h3 class="step-title">AI 분석</h3>
+                        <p class="step-desc">AI가 슬라이드의 텍스트, 이미지, 레이아웃을 분석합니다.</p>
+                    </div>
+                    <div class="step-arrow">→</div>
+                    <div class="step-card">
+                        <div class="step-number">03</div>
+                        <h3 class="step-title">PPTX 생성</h3>
+                        <p class="step-desc">편집 가능한 PowerPoint 파일이 자동으로 생성됩니다.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 푸터 -->
+    <footer class="footer">
+        <div class="footer-container">
+            <p class="footer-text">NoteSlide — AI 기반 슬라이드 변환 도구</p>
+            <p class="footer-sub">Built with Gemini AI Vision • PyMuPDF • python-pptx</p>
+        </div>
+    </footer>
+
+    <script src="/static/js/main.js"></script>
+</body>
+</html>
