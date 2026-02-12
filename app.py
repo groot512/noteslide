@@ -118,17 +118,25 @@ def convert():
         if file_type == "pdf":
             pdf_path = saved_files[0]
 
-            # PDF를 이미지로 변환 (AI 분석 및 폴백 공용)
-            log(f"[{job_id}] PDF 페이지를 이미지로 변환 중...")
-            page_images = pdf_pages_to_images(pdf_path, dpi=200)
-            log(f"[{job_id}] {len(page_images)}개 페이지 이미지 생성 완료")
+            # 전략 1: PDF에서 직접 텍스트/이미지 추출 (빠름, 타임아웃 안전)
+            log(f"[{job_id}] PDF 직접 추출 시도...")
+            slides_data = extract_from_pdf(pdf_path)
+            has_text = any(s.has_sufficient_text for s in slides_data)
+            total_text_blocks = sum(len(s.text_blocks) for s in slides_data)
+            log(f"[{job_id}] 직접 추출 결과: {len(slides_data)}페이지, {total_text_blocks}개 텍스트 블록, 충분: {has_text}")
 
-            if use_ai:
-                # 전략 1: AI Vision으로 분석 (최우선)
-                log(f"[{job_id}] AI Vision 분석 시작...")
+            if has_text:
+                # 텍스트가 충분하면 직접 추출로 PPTX 생성
+                build_pptx_from_pdf_data(slides_data, output_path)
+                method_used = "direct_extraction"
+                log(f"[{job_id}] PDF 직접 추출로 PPTX 생성 완료")
+            elif use_ai:
+                # 텍스트가 부족할 때만 AI Vision 사용
+                log(f"[{job_id}] 텍스트 부족 → AI Vision 분석 시작...")
+                page_images = pdf_pages_to_images(pdf_path, dpi=200)
+                log(f"[{job_id}] {len(page_images)}개 페이지 이미지 생성 완료")
                 try:
                     layouts = analyze_slides_batch(page_images)
-                    # AI가 실제로 요소를 인식했는지 확인
                     total_elements = sum(len(l.elements) for l in layouts)
                     log(f"[{job_id}] AI Vision 결과: {total_elements}개 요소 인식")
 
@@ -140,19 +148,10 @@ def convert():
                         raise ValueError("AI Vision이 요소를 인식하지 못했습니다")
                 except Exception as ai_err:
                     log(f"[{job_id}] AI Vision 실패: {ai_err}")
-                    log(f"[{job_id}] PDF 직접 추출로 폴백...")
-                    # 전략 2: PDF 직접 추출로 폴백
-                    slides_data = extract_from_pdf(pdf_path)
-                    has_text = any(s.has_sufficient_text for s in slides_data)
-                    if has_text:
-                        build_pptx_from_pdf_data(slides_data, output_path)
-                        method_used = "direct_extraction"
-                        log(f"[{job_id}] PDF 직접 추출로 PPTX 생성 완료")
-                    else:
-                        # 전략 3: 이미지 폴백
-                        build_pptx_with_background_images(page_images, output_path)
-                        method_used = "image_fallback"
-                        log(f"[{job_id}] 이미지 폴백으로 PPTX 생성 완료")
+                    # 최종 폴백: 이미지 배경
+                    build_pptx_with_background_images(page_images, output_path)
+                    method_used = "image_fallback"
+                    log(f"[{job_id}] 이미지 폴백으로 PPTX 생성 완료")
             else:
                 # API 키 없음: PDF 직접 추출 시도
                 log(f"[{job_id}] API 키 없음, PDF 직접 추출 시도...")
