@@ -8,7 +8,11 @@ import fitz  # PyMuPDF
 from PIL import Image
 import io
 import os
+import gc
 from dataclasses import dataclass, field
+
+# 이미지 최대 크기 (메모리 절약)
+MAX_IMAGE_DIM = 1200
 
 
 @dataclass
@@ -114,16 +118,21 @@ def extract_from_pdf(pdf_path: str) -> list:
                         )
                         slide.text_blocks.append(tb)
 
-        # --- 이미지 추출 ---
+        # --- 이미지 추출 (메모리 최적화) ---
         image_list = page.get_images(full=True)
-        for img_index, img_info in enumerate(image_list):
+        for img_index, img_info in enumerate(image_list[:5]):  # 페이지당 최대 5개
             xref = img_info[0]
             try:
                 base_image = doc.extract_image(xref)
                 image_bytes = base_image["image"]
                 pil_image = Image.open(io.BytesIO(image_bytes))
 
-                # 이미지 위치 찾기
+                # 이미지 크기 제한
+                if max(pil_image.size) > MAX_IMAGE_DIM:
+                    ratio = MAX_IMAGE_DIM / max(pil_image.size)
+                    new_size = (int(pil_image.width * ratio), int(pil_image.height * ratio))
+                    pil_image = pil_image.resize(new_size, Image.LANCZOS)
+
                 img_rects = page.get_image_rects(xref)
                 if img_rects:
                     r = img_rects[0]
@@ -154,16 +163,10 @@ def extract_from_pdf(pdf_path: str) -> list:
     return slides
 
 
-def pdf_pages_to_images(pdf_path: str, dpi: int = 200) -> list:
+def pdf_pages_to_images(pdf_path: str, dpi: int = 150) -> list:
     """
-    PDF의 각 페이지를 고해상도 PIL Image로 변환합니다.
-
-    Args:
-        pdf_path: PDF 파일 경로
-        dpi: 렌더링 해상도 (기본 200 DPI)
-
-    Returns:
-        list[Image.Image]: 각 페이지의 이미지
+    PDF의 각 페이지를 PIL Image로 변환합니다.
+    메모리 절약을 위해 DPI를 150으로 제한합니다.
     """
     doc = fitz.open(pdf_path)
     images = []
@@ -174,9 +177,12 @@ def pdf_pages_to_images(pdf_path: str, dpi: int = 200) -> list:
         page = doc[page_num]
         pix = page.get_pixmap(matrix=matrix)
         img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+        # pixmap 메모리 즉시 해제
+        pix = None
         images.append(img)
 
     doc.close()
+    gc.collect()
     return images
 
 
